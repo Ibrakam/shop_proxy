@@ -1,12 +1,10 @@
-# shop/views.py
-
 import json
 import requests
 from django.conf import settings
 from django.http import JsonResponse, HttpResponseNotAllowed
 from django.views.decorators.csrf import csrf_exempt
 
-from .models import Shop  # Модель, где храним shop_id
+from .models import Shop, APIUser
 
 
 @csrf_exempt
@@ -17,6 +15,29 @@ def send_data_to_octo(request):
     """
     if request.method != 'POST':
         return HttpResponseNotAllowed(['POST'])
+
+    api_key = request.META.get('HTTP_X_API_KEY', None)  # заголовок X-API-Key
+    if not api_key:
+        api_key = request.GET.get('api_key')
+
+        # 3) Если по-прежнему нет, посмотрим в теле (если это JSON)
+        #    (Поскольку метод POST, можно разобрать request.body)
+    if not api_key:
+        try:
+            data = json.loads(request.body)
+            api_key = data.get('api_key')
+        except (json.JSONDecodeError, AttributeError):
+            pass
+
+        # 4) Если ключ так и не нашли — возвращаем 401
+    if not api_key:
+        return JsonResponse({'error': 'API key is missing'}, status=401)
+
+        # 5) Проверяем, существует ли такой ключ в базе
+    try:
+        user_api_key = APIUser.objects.get(key=api_key)
+    except APIUser.DoesNotExist:
+        return JsonResponse({'error': 'Invalid API key'}, status=403)
 
     # Читаем входящий JSON
     try:
