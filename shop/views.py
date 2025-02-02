@@ -42,7 +42,7 @@ def send_data_to_octo(request):
 
     # Отправляем запрос к Octo
     try:
-        response = requests.post(octo_api_url, json=octo_data, timeout=10)
+        response = requests.post(octo_api_url, json=octo_data, timeout=60)
         # Если код не 2xx, выбросим исключение
         response.raise_for_status()
     except requests.exceptions.RequestException as e:
