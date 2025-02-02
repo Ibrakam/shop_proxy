@@ -38,6 +38,8 @@ def send_data_to_octo(request):
         user_api_key = APIUser.objects.get(key=api_key)
     except APIUser.DoesNotExist:
         return JsonResponse({'error': 'Invalid API key'}, status=403)
+    if not user_api_key.is_subscription_active():
+        return JsonResponse({'error': 'Subscription expired'}, status=403)
 
     # Читаем входящий JSON
     try:
